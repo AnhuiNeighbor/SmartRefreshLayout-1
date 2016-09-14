@@ -19,7 +19,7 @@
         android:layout_centerHorizontal="true"
         android:paddingLeft="@dimen/srl_refresh_text_padding_left"
         android:layout_marginBottom="@dimen/srl_refresh_text_margin_bottom"
-        android:text="继续向下拉!"
+        android:text="@string/srl_keep_pull"
         android:textColor="#525252"
         android:textSize="@dimen/srl_refresh_text_size" />
 </RelativeLayout>

@@ -110,12 +110,6 @@ public class SmartRefreshLayout extends ViewGroup {
         // 添加下拉加载部分
         if(mEnablePullDown)
         addLayoutFooter();
-
-//        ViewParent p = getParent();
-//        Log.e("还有根视图==>",p.getClass().getSimpleName());
-//        while((p=p.getParent())!=null){
-//            Log.e("还有根视图==>",p.getClass().getSimpleName());
-//        }
     }
 
     /**
@@ -187,10 +181,6 @@ public class SmartRefreshLayout extends ViewGroup {
         }
         // 计算到达内容最底部时ViewGroup的滑动距离
         mReachBottomScroll = mLayoutContentHeight -  getMeasuredHeight();
-        Log.e("==>asdhasjkd",getTop()+"//"+getBottom());
-//        if(mReachBottomScroll < 0){
-//            setEnabledPullUp(false);
-//        }
     }
 
     // Layout状态
@@ -348,31 +338,48 @@ public class SmartRefreshLayout extends ViewGroup {
                 // 如果滑动增量小于0，即下拉操作
                 if (dy < 0) {
                     // 如果下拉的距离小于mLayoutHeader的高度,则允许滑动
-                    if (Math.abs(getScrollY()) <=  getMeasuredHeight()) {
-                        // 进行Y轴上的滑动
-                        scrollBy(0, dy);
-                        if (status != REFRESH) {
-                            if (getScrollY() <= 0) {
-                                if (status != TRY_REFRESH)
-                                    updateStatus(TRY_REFRESH);
+                    if (getScrollY() > 0 || Math.abs(getScrollY()) <= getMeasuredHeight()) {
+                        if (status != TRY_LOAD_MORE && status != LOAD_MORE) {
+                            scrollBy(0, dy);
+                            if (status != REFRESH) {
+                                if (getScrollY() <= 0) {
+                                    if (status != TRY_REFRESH)
+                                        updateStatus(TRY_REFRESH);
 
-                                if (Math.abs(getScrollY()) > mMinEffectiveScroll)
-                                    updateStatus(REFRESH);
+                                    if (Math.abs(getScrollY()) > mMinEffectiveScroll)
+                                        updateStatus(REFRESH);
+                                }
+                            }
+                        } else {
+                            if (getScrollY() > 0) {
+                                dy = dy > 30 ? 30 : dy;
+                                scrollBy(0, dy);
+                                if (getScrollY() < mReachBottomScroll + mMinEffectiveScroll) {
+                                    updateStatus(TRY_LOAD_MORE);
+                                }
                             }
                         }
                     }
                 } else if (dy > 0) {
-                    // 如果下拉的距离小于mLayoutHeader的高度,则允许滑动
-                    if (getScrollY() <= mLayoutContentHeight + mLayoutFooter.getMeasuredHeight() -  getMeasuredHeight()) {
+                    if (getScrollY() <= mReachBottomScroll + mLayoutFooter.getMeasuredHeight()) {
                         // 进行Y轴上的滑动
-                        scrollBy(0, dy);
-                        if (status != LOAD_MORE) {
-                            if (getScrollY() >= mReachBottomScroll) {
-                                if (status != TRY_LOAD_MORE)
-                                    updateStatus(TRY_LOAD_MORE);
+                        if (status != TRY_REFRESH && status != REFRESH) {
+                            scrollBy(0, dy);
+                            if (status != LOAD_MORE) {
+                                if (getScrollY() >= mReachBottomScroll) {
+                                    if (status != TRY_LOAD_MORE)
+                                        updateStatus(TRY_LOAD_MORE);
 
-                                if (getScrollY() >= mReachBottomScroll + mMinEffectiveScroll)
-                                    updateStatus(LOAD_MORE);
+                                    if (getScrollY() >= mReachBottomScroll + mMinEffectiveScroll)
+                                        updateStatus(LOAD_MORE);
+                                }
+                            }
+                        } else {
+                            if (getScrollY() <= 0) {
+                                dy = dy > 30 ? 30 : dy;
+                                scrollBy(0, dy);
+                                if (Math.abs(getScrollY()) < mMinEffectiveScroll)
+                                    updateStatus(TRY_REFRESH);
                             }
                         }
                     }
@@ -490,7 +497,7 @@ public class SmartRefreshLayout extends ViewGroup {
             switch (msg.what) {
                 case STOP_REFRESH: {
                     mLayoutScroller.startScroll(0, getScrollY(), 0, -getScrollY(), SCROLL_SPEED);
-                    tvRefreshDes.setText("继续向下拉!");
+                    tvRefreshDes.setText(R.string.srl_keep_pull);
                     tvRefreshDes.setVisibility(VISIBLE);
                     glvRefresh.stopAnim();
                     status = NORMAL;
