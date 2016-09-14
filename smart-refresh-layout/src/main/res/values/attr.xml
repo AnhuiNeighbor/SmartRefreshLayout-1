@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="enablePullUp" format="boolean" />
+    <attr name="enablePullDown" format="boolean" />
+
+    <declare-styleable name="SmartRefreshLayout">
+        <attr name="enablePullUp" />
+        <attr name="enablePullDown" />
+    </declare-styleable>
+</resources>

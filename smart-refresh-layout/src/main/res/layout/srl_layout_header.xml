@@ -1,0 +1,25 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/srl_pull_background">
+
+    <me.hwang.library.widgit.GhostLoadingView
+        android:id="@+id/srl_glv_refresh"
+        android:layout_width="@dimen/srl_loading_view_width"
+        android:layout_height="@dimen/srl_loading_view_height"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/srl_loading_view_margin" />
+
+    <TextView
+        android:id="@+id/srl_tv_refresh_des"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@id/srl_glv_refresh"
+        android:layout_centerHorizontal="true"
+        android:paddingLeft="@dimen/srl_refresh_text_padding_left"
+        android:layout_marginBottom="@dimen/srl_refresh_text_margin_bottom"
+        android:text="继续向下拉!"
+        android:textColor="#525252"
+        android:textSize="@dimen/srl_refresh_text_size" />
+</RelativeLayout>
