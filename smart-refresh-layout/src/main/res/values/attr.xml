@@ -2,9 +2,11 @@
 <resources>
     <attr name="enablePullUp" format="boolean" />
     <attr name="enablePullDown" format="boolean" />
+    <attr name="pullBackground" format="color|reference" />
 
     <declare-styleable name="SmartRefreshLayout">
         <attr name="enablePullUp" />
         <attr name="enablePullDown" />
+        <attr name="pullBackground" />
     </declare-styleable>
 </resources>

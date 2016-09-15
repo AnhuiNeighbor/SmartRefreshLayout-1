@@ -52,7 +52,7 @@ public class GhostLoadingView extends View {
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setColor(Color.WHITE);
+        mPaint.setColor(Color.GRAY);
         mPaintHand = new Paint();
         mPaintHand.setAntiAlias(true);
         mPaintHand.setStyle(Paint.Style.FILL);
