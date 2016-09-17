@@ -497,6 +497,11 @@ public class SmartRefreshLayout extends ViewGroup {
             mListener.onLoadMore();
     }
 
+    public void resetLayoutLocation() {
+        status = NORMAL;
+        scrollTo(0,0);
+    }
+
     @Override
     public void computeScroll() {
         super.computeScroll();
