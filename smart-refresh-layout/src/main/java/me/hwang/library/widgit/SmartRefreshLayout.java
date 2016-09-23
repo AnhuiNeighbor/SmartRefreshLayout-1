@@ -316,14 +316,20 @@ public class SmartRefreshLayout extends ViewGroup {
         return intercept;
     }
 
+    public static boolean isSlideToBottom(RecyclerView recyclerView) {
+        if (recyclerView == null) return false;
+        if (recyclerView.computeVerticalScrollExtent() + recyclerView.computeVerticalScrollOffset()
+                >= recyclerView.computeVerticalScrollRange())
+            return true;
+        return false;
+    }
+
     private boolean rvPullDownIntercept(View child) {
         boolean intercept = false;
 
         RecyclerView recyclerChild = (RecyclerView) child;
-        LinearLayoutManager lm = (LinearLayoutManager) recyclerChild.getLayoutManager();
-        if (lm.findFirstVisibleItemPosition() == 0 &&
-                lm.findViewByPosition(lm.findFirstVisibleItemPosition()).getTop() == 0)
-            intercept = true;
+        if (recyclerChild.computeVerticalScrollOffset()<=0)
+           intercept = true;
 
         return intercept;
     }
@@ -332,9 +338,8 @@ public class SmartRefreshLayout extends ViewGroup {
         boolean intercept = false;
 
         RecyclerView recyclerChild = (RecyclerView) child;
-        LinearLayoutManager lm = (LinearLayoutManager) recyclerChild.getLayoutManager();
-        if (lm.findLastVisibleItemPosition() == recyclerChild.getAdapter().getItemCount() - 1 &&
-                lm.findViewByPosition(lm.findLastVisibleItemPosition()).getBottom() == getMeasuredHeight())
+        if (recyclerChild.computeVerticalScrollExtent() + recyclerChild.computeVerticalScrollOffset()
+                >= recyclerChild.computeVerticalScrollRange())
             intercept = true;
 
         return intercept;
