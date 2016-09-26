@@ -3,7 +3,7 @@ A common use pull-up/down view-group of android
 
 
 # Gradle
-> compile 'me.rawnhwang.library:smart-refresh-layout:1.1.0-beta3'
+> compile 'me.rawnhwang.library:smart-refresh-layout:1.0.0-rc'
 
 # Layout-XML
 ```XML
