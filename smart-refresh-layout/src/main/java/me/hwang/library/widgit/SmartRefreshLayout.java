@@ -47,17 +47,14 @@ public class SmartRefreshLayout extends ViewGroup {
     private LayoutInflater mInflater;
     // 头视图(即上拉刷新时显示的部分)
     private RelativeLayout mLayoutHeader;
-    private GhostLoadingView glvRefresh;
-    private TextView tvRefreshDes;
+    private TextView tvPullDown;
+    private GhostLoadingView glvPullDown;
 
     // 尾视图(即下拉加载时显示的部分)
     private RelativeLayout mLayoutFooter;
-    private EatBeanLoadingView elvLoadMore;
+    private TextView tvPullUp;
+    private EatBeanLoadingView elvPullUp;
 
-    // header在整个layout的child view - list中的坐标
-    private int headerIndex = -1;
-    // footer在整个layout的child view - list中的坐标
-    private int footerIndex = -1;
     // 最后一个content-child-view的index
     private int lastChildIndex;
 
@@ -70,7 +67,7 @@ public class SmartRefreshLayout extends ViewGroup {
     // 当滚动到内容最底部时Y轴所需要滑动的举例
     private int mReachBottomScroll;
     // 最小有效滑动距离(滑动超过该距离才视作一次有效的滑动刷新/加载操作)
-    private static int mMinEffectiveScroll;
+    private static int mEffectiveScroll;
 
     // 拉动部分背景(color|drawable)
     private Drawable mPullBgDrawable = null;
@@ -100,8 +97,7 @@ public class SmartRefreshLayout extends ViewGroup {
         // 实例化Scroller
         mLayoutScroller = new Scroller(context);
         // 计算最小有效滑动距离
-        mMinEffectiveScroll = (int) (context.getResources().getDimension(R.dimen.srl_loading_view_height)
-                + context.getResources().getDimension(R.dimen.srl_loading_view_margin) * 2);
+        mEffectiveScroll = (int) (context.getResources().getDimension(R.dimen.srl_effective_scroll));
     }
 
     @Override
@@ -122,17 +118,15 @@ public class SmartRefreshLayout extends ViewGroup {
      * 添加上拉刷新布局作为header
      */
     private void addLayoutHeader() {
-        // 记录Header在本ViewGroup中的坐标
-        headerIndex = getChildCount();
         // 通过LayoutInflater获取从布局文件中获取header的view对象
         mLayoutHeader = (RelativeLayout) mInflater.inflate(R.layout.srl_layout_header, null);
         if (mPullBgDrawable != null)
             mLayoutHeader.setBackgroundDrawable(mPullBgDrawable);
 
-        // 获取上拉刷新的loading-view
-        glvRefresh = (GhostLoadingView) mLayoutHeader.findViewById(R.id.srl_glv_refresh);
         // 获取上拉刷新的文字描述
-        tvRefreshDes = (TextView) mLayoutHeader.findViewById(R.id.srl_tv_refresh_des);
+        tvPullDown = (TextView) mLayoutHeader.findViewById(R.id.srl_tv_pull_down);
+        // 获取上拉刷新的loading-view
+        glvPullDown = (GhostLoadingView) mLayoutHeader.findViewById(R.id.srl_glv_pull_down);
         // 设置布局参数(宽度为MATCH_PARENT,高度为MATCH_PARENT)
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams
                 (RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -144,14 +138,15 @@ public class SmartRefreshLayout extends ViewGroup {
      * 添加下拉加载布局作为footer
      */
     private void addLayoutFooter() {
-        // 记录Footer在本ViewGroup中的坐标
-        footerIndex = getChildCount();
         // 通过LayoutInflater获取从布局文件中获取footer的view对象
         mLayoutFooter = (RelativeLayout) mInflater.inflate(R.layout.srl_layout_footer, null);
         if (mPullBgDrawable != null)
             mLayoutFooter.setBackgroundDrawable(mPullBgDrawable);
+
+        // 上拉提示
+        tvPullUp = (TextView) mLayoutFooter.findViewById(R.id.srl_tv_pull_up);
         // 上拉loading动画
-        elvLoadMore = (EatBeanLoadingView) mLayoutFooter.findViewById(R.id.elv_load_more);
+        elvPullUp = (EatBeanLoadingView) mLayoutFooter.findViewById(R.id.srl_elv_pull_up);
         // 设置布局参数(宽度为MATCH_PARENT,高度为MATCH_PARENT)
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams
                 (RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -178,9 +173,9 @@ public class SmartRefreshLayout extends ViewGroup {
         // 遍历进行子视图的置位工作
         for (int index = 0; index < getChildCount(); index++) {
             View child = getChildAt(index);
-            if (index == headerIndex) { // 头视图隐藏在屏幕的顶端
+            if (child == mLayoutHeader) { // 头视图隐藏在ViewGroup的顶端
                 child.layout(0, 0 - child.getMeasuredHeight(), child.getMeasuredWidth(), 0);
-            } else if (index == footerIndex) { // 尾视图隐藏在layout所有内容视图之后
+            } else if (child == mLayoutFooter) { // 尾视图隐藏在ViewGroup所有内容视图之后
                 child.layout(0, mLayoutContentHeight, child.getMeasuredWidth(), mLayoutContentHeight + child.getMeasuredHeight());
             } else { // 内容视图根据定义(插入)顺序,按由上到下的顺序在垂直方向进行排列
                 child.layout(0, mLayoutContentHeight, child.getMeasuredWidth(), mLayoutContentHeight + child.getMeasuredHeight());
@@ -217,8 +212,6 @@ public class SmartRefreshLayout extends ViewGroup {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        //Log.e(TAG,"onInterceptTouchEvent");
-
         boolean intercept = false;
         // 记录此次触摸事件的y坐标
         int y = (int) event.getY();
@@ -237,7 +230,6 @@ public class SmartRefreshLayout extends ViewGroup {
                 if (y > mLastYIntercept) { // 下滑操作
                     // 获取最顶部的子视图
                     View child = getChildAt(0);
-                    // 当child是AdapterView类型时的下拉拦截判断
                     if (child instanceof AdapterView) {
                         intercept = avPullDownIntercept(child);
                     } else if (child instanceof ScrollView) {
@@ -248,7 +240,6 @@ public class SmartRefreshLayout extends ViewGroup {
                 } else if (y < mLastYIntercept) { // 上拉操作
                     // 获取最底部的子视图
                     View child = getChildAt(lastChildIndex);
-                    // 当child是AdapterView类型时的上拉拦截判断
                     if (child instanceof AdapterView) {
                         intercept = avPullUpIntercept(child);
                     } else if (child instanceof ScrollView) {
@@ -278,7 +269,7 @@ public class SmartRefreshLayout extends ViewGroup {
         // 判断AbsListView是否已经到达内容最顶部
         if (adapterChild.getFirstVisiblePosition() != 0
                 || adapterChild.getChildAt(0).getTop() != 0) {
-            // 如果没有达到最顶端，则仍然将事件下放，即传递给AbsListView处理滑动
+            // 如果没有达到最顶端，则仍然将事件下放
             intercept = false;
         }
         return intercept;
@@ -316,14 +307,6 @@ public class SmartRefreshLayout extends ViewGroup {
         return intercept;
     }
 
-    public static boolean isSlideToBottom(RecyclerView recyclerView) {
-        if (recyclerView == null) return false;
-        if (recyclerView.computeVerticalScrollExtent() + recyclerView.computeVerticalScrollOffset()
-                >= recyclerView.computeVerticalScrollRange())
-            return true;
-        return false;
-    }
-
     private boolean rvPullDownIntercept(View child) {
         boolean intercept = false;
 
@@ -357,7 +340,7 @@ public class SmartRefreshLayout extends ViewGroup {
                 // 如果滑动增量小于0，即下拉操作
                 if (dy < 0) {
                     if (mEnablePullDown) {
-                        // 如果下拉的距离小于mLayoutHeader的高度,则允许滑动
+                        // 如果下拉的距离小于mLayoutHeader1/2的高度,则允许滑动
                         if (getScrollY() > 0 || Math.abs(getScrollY()) <= mLayoutHeader.getMeasuredHeight() / 2) {
                             if (status != TRY_LOAD_MORE && status != LOAD_MORE) {
                                 scrollBy(0, dy);
@@ -366,7 +349,7 @@ public class SmartRefreshLayout extends ViewGroup {
                                         if (status != TRY_REFRESH)
                                             updateStatus(TRY_REFRESH);
 
-                                        if (Math.abs(getScrollY()) > mMinEffectiveScroll)
+                                        if (Math.abs(getScrollY()) > mEffectiveScroll)
                                             updateStatus(REFRESH);
                                     }
                                 }
@@ -374,7 +357,7 @@ public class SmartRefreshLayout extends ViewGroup {
                                 if (getScrollY() > 0) {
                                     dy = dy > 30 ? 30 : dy;
                                     scrollBy(0, dy);
-                                    if (getScrollY() < mReachBottomScroll + mMinEffectiveScroll) {
+                                    if (getScrollY() < mReachBottomScroll + mEffectiveScroll) {
                                         updateStatus(TRY_LOAD_MORE);
                                     }
                                 }
@@ -392,7 +375,7 @@ public class SmartRefreshLayout extends ViewGroup {
                                         if (status != TRY_LOAD_MORE)
                                             updateStatus(TRY_LOAD_MORE);
 
-                                        if (getScrollY() >= mReachBottomScroll + mMinEffectiveScroll)
+                                        if (getScrollY() >= mReachBottomScroll + mEffectiveScroll)
                                             updateStatus(LOAD_MORE);
                                     }
                                 }
@@ -400,7 +383,7 @@ public class SmartRefreshLayout extends ViewGroup {
                                 if (getScrollY() <= 0) {
                                     dy = dy > 30 ? 30 : dy;
                                     scrollBy(0, dy);
-                                    if (Math.abs(getScrollY()) < mMinEffectiveScroll)
+                                    if (Math.abs(getScrollY()) < mEffectiveScroll)
                                         updateStatus(TRY_REFRESH);
                                 }
                             }
@@ -456,8 +439,8 @@ public class SmartRefreshLayout extends ViewGroup {
                 break;
             }
             case REFRESH: {
-                tvRefreshDes.setText("松开刷新!");
                 this.status = REFRESH;
+                tvPullDown.setText(R.string.srl_release_to_refresh);
                 break;
             }
             case TRY_LOAD_MORE: {
@@ -466,6 +449,7 @@ public class SmartRefreshLayout extends ViewGroup {
             }
             case LOAD_MORE:
                 this.status = LOAD_MORE;
+                tvPullUp.setText(R.string.srl_release_to_refresh);
                 break;
         }
     }
@@ -477,13 +461,15 @@ public class SmartRefreshLayout extends ViewGroup {
     private void upWithStatusTryRefresh() {
         // 取消本次的滑动
         mLayoutScroller.startScroll(0, getScrollY(), 0, -getScrollY(), SCROLL_SPEED);
+        tvPullDown.setText(R.string.srl_keep_pull_down);
         status = NORMAL;
     }
 
     private void upWithStatusRefresh() {
-        mLayoutScroller.startScroll(0, getScrollY(), 0, -(getScrollY() - (-mMinEffectiveScroll)), SCROLL_SPEED);
-        tvRefreshDes.setVisibility(GONE);
-        glvRefresh.startAnim();
+        mLayoutScroller.startScroll(0, getScrollY(), 0, -(getScrollY() - (-mEffectiveScroll)), SCROLL_SPEED);
+        tvPullDown.setVisibility(View.GONE);
+        glvPullDown.setVisibility(View.VISIBLE);
+        glvPullDown.startAnim();
         // 通过Listener接口执行刷新时的监听事件
         if (mListener != null)
             mListener.onRefresh();
@@ -491,12 +477,15 @@ public class SmartRefreshLayout extends ViewGroup {
 
     private void upWithStatusTryLoadMore() {
         mLayoutScroller.startScroll(0, getScrollY(), 0, -(getScrollY() - mReachBottomScroll), SCROLL_SPEED);
+        tvPullUp.setText(R.string.srl_keep_pull_up);
         status = NORMAL;
     }
 
     private void upWithStatusLoadMore() {
-        mLayoutScroller.startScroll(0, getScrollY(), 0, -((getScrollY() - mMinEffectiveScroll) - mReachBottomScroll), SCROLL_SPEED);
-        elvLoadMore.startAnim();
+        mLayoutScroller.startScroll(0, getScrollY(), 0, -((getScrollY() - mEffectiveScroll) - mReachBottomScroll), SCROLL_SPEED);
+        tvPullUp.setVisibility(View.GONE);
+        elvPullUp.setVisibility(View.VISIBLE);
+        elvPullUp.startAnim();
         // 通过Listener接口执行加载时的监听事件
         if (mListener != null)
             mListener.onLoadMore();
@@ -525,16 +514,20 @@ public class SmartRefreshLayout extends ViewGroup {
             switch (msg.what) {
                 case STOP_REFRESH: {
                     mLayoutScroller.startScroll(0, getScrollY(), 0, -getScrollY(), SCROLL_SPEED);
-                    tvRefreshDes.setText(R.string.srl_keep_pull);
-                    tvRefreshDes.setVisibility(VISIBLE);
-                    glvRefresh.stopAnim();
+                    tvPullDown.setText(R.string.srl_keep_pull_up);
+                    tvPullDown.setVisibility(View.VISIBLE);
+                    glvPullDown.stopAnim();
+                    glvPullDown.setVisibility(View.GONE);
                     status = NORMAL;
                     break;
                 }
 
                 case STOP_LOAD_MORE: {
                     mLayoutScroller.startScroll(0, getScrollY(), 0, -(getScrollY() - mReachBottomScroll), SCROLL_SPEED);
-                    elvLoadMore.stopAnim();
+                    tvPullUp.setText(R.string.srl_keep_pull_up);
+                    tvPullUp.setVisibility(View.VISIBLE);
+                    elvPullUp.stopAnim();
+                    elvPullUp.setVisibility(View.GONE);
                     status = NORMAL;
                     break;
                 }
