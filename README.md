@@ -3,10 +3,9 @@ A common use pull-up/down view-group of android
 
 
 # Gradle
-
 > compile 'me.rawnhwang.library:smart-refresh-layout:1.1.0-beta3'
 
-
+# Layout-XML
 ```XML
 <?xml version="1.0" encoding="utf-8"?>
 <me.hwang.library.widgit.SmartRefreshLayout
@@ -33,6 +32,9 @@ A common use pull-up/down view-group of android
 
 ```
 ---
+
+# Java-Code
+
 ```JAVA
 public class MainActivity extends AppCompatActivity {
     private SmartRefreshLayout mLayout;
@@ -66,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
 - With common view(e.g ImageView)
 
-![ImageView-Demo](https://github.com/RawnHwang/SmartRefreshLayout/blob/master/demonstration-gif/image_demo.gif)
+![ImageView-Demo](https://github.com/RawnHwang/SmartRefreshLayout/blob/master/demonstration-gif/imageview_demo.gif)
 
 - With ListView
 
